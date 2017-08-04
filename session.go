@@ -218,6 +218,8 @@ func (s *Session) init() error {
 		return ErrNoConnectionsStarted
 	}
 
+	s.skipPrepareStmt = false
+
 	return nil
 }
 
@@ -283,6 +285,14 @@ func (s *Session) SetPrefetch(p float64) {
 func (s *Session) SetTrace(trace Tracer) {
 	s.mu.Lock()
 	s.trace = trace
+	s.mu.Unlock()
+}
+
+// SetSkipPrepStmt sets the default way to execute query(prepare and execute or direct execution).
+// This setting can also be changed on a per-query basis.
+func (s *Session) SetSkipPrepStmt(skip bool) {
+	s.mu.Lock()
+	s.skipPrepareStmt = skip
 	s.mu.Unlock()
 }
 

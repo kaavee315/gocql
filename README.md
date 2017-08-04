@@ -1,15 +1,15 @@
 gocql
 =====
 
-[![Join the chat at https://gitter.im/kaavee315/gocql](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kaavee315/gocql?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/kaavee315/gocql.svg?branch=master)](https://travis-ci.org/kaavee315/gocql)
-[![GoDoc](https://godoc.org/github.com/kaavee315/gocql?status.svg)](https://godoc.org/github.com/kaavee315/gocql)
+[![Join the chat at https://gitter.im/gocql/gocql](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/gocql/gocql?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/gocql/gocql.svg?branch=master)](https://travis-ci.org/gocql/gocql)
+[![GoDoc](https://godoc.org/github.com/gocql/gocql?status.svg)](https://godoc.org/github.com/gocql/gocql)
 
 Package gocql implements a fast and robust Cassandra client for the
 Go programming language.
 
 Project Website: https://gocql.github.io/<br>
-API documentation: https://godoc.org/github.com/kaavee315/gocql<br>
+API documentation: https://godoc.org/github.com/gocql/gocql<br>
 Discussions: https://groups.google.com/forum/#!forum/gocql
 
 Supported Versions
@@ -32,7 +32,7 @@ In general, the gocql team will focus on supporting the current and previous ver
 Installation
 ------------
 
-    go get github.com/kaavee315/gocql
+    go get github.com/gocql/gocql
 
 
 Features
@@ -126,7 +126,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kaavee315/gocql"
+	"github.com/gocql/gocql"
 )
 
 func main() {
