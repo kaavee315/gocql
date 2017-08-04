@@ -150,7 +150,15 @@ func NewCluster(hosts ...string) *ClusterConfig {
 // CreateSession initializes the cluster based on this config and returns a
 // session object that can be used to interact with the database.
 func (cfg *ClusterConfig) CreateSession() (*Session, error) {
-	return NewSession(*cfg)
+	sess, err := NewSession(*cfg)
+	sess.skipPrepareStmt = false
+	return sess, err
+}
+
+func (cfg *ClusterConfig) CreateSessionWithoutPrep() (*Session, error) {
+	sess, err := NewSession(*cfg)
+	sess.skipPrepareStmt = true
+	return sess, err
 }
 
 // translateAddressPort is a helper method that will use the given AddressTranslator

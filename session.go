@@ -39,6 +39,7 @@ type Session struct {
 	trace               Tracer
 	hostSource          *ringDescriber
 	stmtsLRU            *preparedLRU
+	skipPrepareStmt     bool
 
 	connCfg *ConnConfig
 
@@ -302,6 +303,7 @@ func (s *Session) Query(stmt string, values ...interface{}) *Query {
 	qry.rt = s.cfg.RetryPolicy
 	qry.serialCons = s.cfg.SerialConsistency
 	qry.defaultTimestamp = s.cfg.DefaultTimestamp
+	qry.skipPrepareStmt = s.skipPrepareStmt
 	s.mu.RUnlock()
 	return qry
 }
@@ -657,6 +659,7 @@ type Query struct {
 	defaultTimestampValue int64
 	disableSkipMetadata   bool
 	context               context.Context
+	skipPrepareStmt       bool
 
 	disableAutoPage bool
 }
@@ -825,7 +828,9 @@ func (q *Query) GetRoutingKey() ([]byte, error) {
 }
 
 func (q *Query) shouldPrepare() bool {
-
+	if q.skipPrepareStmt {
+		return false
+	}
 	stmt := strings.TrimLeftFunc(strings.TrimRightFunc(q.stmt, func(r rune) bool {
 		return unicode.IsSpace(r) || r == ';'
 	}), unicode.IsSpace)
