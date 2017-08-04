@@ -18,7 +18,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/gocql/gocql/internal/lru"
+	"github.com/kaavee315/gocql/internal/lru"
 )
 
 // Session is the interface used by users to interact with the database.
@@ -39,6 +39,7 @@ type Session struct {
 	trace               Tracer
 	hostSource          *ringDescriber
 	stmtsLRU            *preparedLRU
+	skipPrepareStmt     bool
 
 	connCfg *ConnConfig
 
@@ -217,6 +218,8 @@ func (s *Session) init() error {
 		return ErrNoConnectionsStarted
 	}
 
+	s.skipPrepareStmt = false
+
 	return nil
 }
 
@@ -285,6 +288,14 @@ func (s *Session) SetTrace(trace Tracer) {
 	s.mu.Unlock()
 }
 
+// SetSkipPrepStmt sets the default way to execute query(prepare and execute or direct execution).
+// This setting can also be changed on a per-query basis.
+func (s *Session) SetSkipPrepStmt(skip bool) {
+	s.mu.Lock()
+	s.skipPrepareStmt = skip
+	s.mu.Unlock()
+}
+
 // Query generates a new query object for interacting with the database.
 // Further details of the query may be tweaked using the resulting query
 // value before the query is executed. Query is automatically prepared
@@ -302,6 +313,7 @@ func (s *Session) Query(stmt string, values ...interface{}) *Query {
 	qry.rt = s.cfg.RetryPolicy
 	qry.serialCons = s.cfg.SerialConsistency
 	qry.defaultTimestamp = s.cfg.DefaultTimestamp
+	qry.skipPrepareStmt = s.skipPrepareStmt
 	s.mu.RUnlock()
 	return qry
 }
@@ -657,6 +669,7 @@ type Query struct {
 	defaultTimestampValue int64
 	disableSkipMetadata   bool
 	context               context.Context
+	skipPrepareStmt       bool
 
 	disableAutoPage bool
 }
@@ -825,7 +838,9 @@ func (q *Query) GetRoutingKey() ([]byte, error) {
 }
 
 func (q *Query) shouldPrepare() bool {
-
+	if q.skipPrepareStmt {
+		return false
+	}
 	stmt := strings.TrimLeftFunc(strings.TrimRightFunc(q.stmt, func(r rune) bool {
 		return unicode.IsSpace(r) || r == ';'
 	}), unicode.IsSpace)
