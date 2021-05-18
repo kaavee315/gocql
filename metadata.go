@@ -408,14 +408,16 @@ func getKeyspaceMetadata(session *Session, keyspaceName string) (*KeyspaceMetada
 	keyspace := &KeyspaceMetadata{Name: keyspaceName}
 
 	if session.useSystemSchema { // Cassandra 3.x+
-		const stmt = `
+		stmt := fmt.Sprintf(`
 		SELECT durable_writes, replication
 		FROM system_schema.keyspaces
-		WHERE keyspace_name = ?`
+		WHERE keyspace_name = '%s'`,
+			keyspaceName,
+		)
 
 		var replication map[string]string
 
-		iter := session.control.query(stmt, keyspaceName)
+		iter := session.control.query(stmt)
 		if iter.NumRows() == 0 {
 			return nil, ErrKeyspaceDoesNotExist
 		}
@@ -433,10 +435,12 @@ func getKeyspaceMetadata(session *Session, keyspaceName string) (*KeyspaceMetada
 		}
 	} else {
 
-		const stmt = `
+		stmt := fmt.Sprintf(`
 		SELECT durable_writes, strategy_class, strategy_options
 		FROM system.schema_keyspaces
-		WHERE keyspace_name = ?`
+		WHERE keyspace_name = '%s'`,
+			keyspaceName,
+		)
 
 		var strategyOptionsJSON []byte
 
@@ -475,20 +479,24 @@ func getTableMetadata(session *Session, keyspaceName string) ([]TableMetadata, e
 	)
 
 	if session.useSystemSchema { // Cassandra 3.x+
-		stmt = `
+		stmt = fmt.Sprintf(`
 		SELECT
 			table_name
 		FROM system_schema.tables
-		WHERE keyspace_name = ?`
+		WHERE keyspace_name = '%s'`,
+			keyspaceName,
+				)
 
 		switchIter := func() *Iter {
 			iter.Close()
-			stmt = `
+			stmt = fmt.Sprintf(`
 				SELECT
 					view_name
 				FROM system_schema.views
-				WHERE keyspace_name = ?`
-			iter = session.control.query(stmt, keyspaceName)
+				WHERE keyspace_name = '%s'`,
+					keyspaceName,
+			)
+			iter = session.control.query(stmt)
 			return iter
 		}
 
@@ -507,7 +515,7 @@ func getTableMetadata(session *Session, keyspaceName string) ([]TableMetadata, e
 		}
 	} else if session.cfg.ProtoVersion == protoVersion1 {
 		// we have key aliases
-		stmt = `
+		stmt = fmt.Sprintf(`
 		SELECT
 			columnfamily_name,
 			key_validator,
@@ -517,7 +525,9 @@ func getTableMetadata(session *Session, keyspaceName string) ([]TableMetadata, e
 			column_aliases,
 			value_alias
 		FROM system.schema_columnfamilies
-		WHERE keyspace_name = ?`
+		WHERE keyspace_name = '%s'`,
+			keyspaceName,
+		)
 
 		scan = func(iter *Iter, table *TableMetadata) bool {
 			return iter.Scan(
@@ -531,14 +541,16 @@ func getTableMetadata(session *Session, keyspaceName string) ([]TableMetadata, e
 			)
 		}
 	} else {
-		stmt = `
+		stmt = fmt.Sprintf(`
 		SELECT
 			columnfamily_name,
 			key_validator,
 			comparator,
 			default_validator
 		FROM system.schema_columnfamilies
-		WHERE keyspace_name = ?`
+		WHERE keyspace_name = '%s'`,
+			keyspaceName,
+		)
 
 		scan = func(iter *Iter, table *TableMetadata) bool {
 			return iter.Scan(
@@ -550,7 +562,7 @@ func getTableMetadata(session *Session, keyspaceName string) ([]TableMetadata, e
 		}
 	}
 
-	iter = session.control.query(stmt, keyspaceName)
+	iter = session.control.query(stmt)
 
 	tables := []TableMetadata{}
 	table := TableMetadata{Keyspace: keyspaceName}
@@ -719,7 +731,7 @@ func (s *Session) scanColumnMetadataV2(keyspace string) ([]ColumnMetadata, error
 }
 
 func (s *Session) scanColumnMetadataSystem(keyspace string) ([]ColumnMetadata, error) {
-	const stmt = `
+	stmt := fmt.Sprintf(`
 			SELECT
 				table_name,
 				column_name,
@@ -728,11 +740,13 @@ func (s *Session) scanColumnMetadataSystem(keyspace string) ([]ColumnMetadata, e
 				kind,
 				position
 			FROM system_schema.columns
-			WHERE keyspace_name = ?`
+			WHERE keyspace_name = '%s'`,
+				keyspace,
+	)
 
 	var columns []ColumnMetadata
 
-	rows := s.control.query(stmt, keyspace).Scanner()
+	rows := s.control.query(stmt).Scanner()
 	for rows.Next() {
 		column := ColumnMetadata{Keyspace: keyspace}
 
